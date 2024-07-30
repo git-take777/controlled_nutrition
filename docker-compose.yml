@@ -1,0 +1,55 @@
+version: "3.8"
+
+services:
+  # Laravel PHP-FPM Service
+  laravel-app:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    image: laravel-app
+    container_name: laravel-app
+    restart: unless-stopped
+    working_dir: /var/www/html
+    volumes:
+      - ./backend:/var/www/html
+    environment:
+      - APP_ENV=local
+      - APP_DEBUG=true
+      - APP_KEY=your_app_key_here
+      - DB_CONNECTION=mysql
+      - DB_HOST=db
+      - DB_PORT=3306
+      - DB_DATABASE=laravel
+      - DB_USERNAME=take
+      - DB_PASSWORD=password4631
+    depends_on:
+      - db
+
+  # MySQL Service
+  db:
+    platform: linux/x86_64
+    image: mysql:5.7
+    container_name: laravel-mysql
+    restart: unless-stopped
+    environment:
+      - MYSQL_DATABASE=laravel
+      - MYSQL_ROOT_PASSWORD=your_mysql_password
+    volumes:
+      - dbdata:/var/lib/mysql
+
+  # TypeScript + Svelte Frontend Service
+  frontend-app:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    image: frontend-app
+    container_name: frontend-app
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./frontend:/app
+    command: npm run dev # フロントエンド開発サーバーの起動コマンド
+
+volumes:
+  dbdata:

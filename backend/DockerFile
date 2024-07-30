@@ -1,0 +1,39 @@
+# ベースイメージを指定
+FROM php:8.4-fpm
+
+# 必要なパッケージをインストール
+RUN apt-get update && apt-get install -y \
+    libzip-dev \
+    zip \
+    unzip \
+    git \
+    && docker-php-ext-install zip pdo_mysql
+
+# Composer をインストール
+RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
+
+# Composer のグローバルバージョンを設定
+ENV COMPOSER_ALLOW_SUPERUSER 1
+
+# コンテナ内の作業ディレクトリを指定
+WORKDIR /var/www/html
+
+# Composer のインストールされた依存関係のバージョンをすべてコピーする
+COPY backend/composer.json backend/composer.lock ./
+
+# グローバルな composer が認識するように実行する
+RUN composer install --no-dev --no-scripts
+
+# すべてのソースをコピー
+COPY . .
+
+# アプリケーションのキャッシュと設定
+RUN chmod -R 777 storage bootstrap/cache
+RUN php artisan config:cache
+RUN php artisan route:cache
+
+# ポートをエクスポートする
+EXPOSE 9000
+
+# CMD のデフォルトエントリーポイントを設定する
+CMD ["php-fpm"]
